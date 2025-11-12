@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "deors-demos-github-mcp-server": {
+      "type": "streamable-http",
+      "url": "http://localhost:3223/stream"
+    }
+  },
+	"inputs": []
+}
