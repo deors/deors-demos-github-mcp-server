@@ -35,15 +35,15 @@ export async function getRepo(query: string): Promise<string[]> {
         });
 
         let matchingRepos: string[] = [];
-        // if query has spaces or commas, split into multiple terms
-        if (query.includes(' ') || query.includes(',')) {
-            const terms = query.split(/[, ]+/).map(t => t.trim()).filter(t => t.length > 0);
+        // if query has commas or vertical bars, split into multiple terms
+        if (query.includes(',') || query.includes('|')) {
+            const terms = query.split(/[,|]+/).map(t => t.trim().toLowerCase()).filter(t => t.length > 0);
             matchingRepos = response.data
-                .filter(repo => terms.some(term => repo.name.includes(term)))
+                .filter(repo => terms.some(term => repo.name.toLowerCase().includes(term)))
                 .map(repo => repo.name);
         } else {
             matchingRepos = response.data
-                .filter(repo => repo.name.includes(query))
+                .filter(repo => repo.name.toLowerCase().includes(query.toLowerCase()))
                 .map(repo => repo.name);
         }
         return matchingRepos;

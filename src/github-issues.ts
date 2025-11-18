@@ -33,9 +33,18 @@ export async function getIssues(repo: string, query: string): Promise<string[]> 
             console.log(`- ${issue.title}`);
         });
 
-        const matchingIssues = response.data
-            .filter(issue => issue.title.includes(query) || (issue.body && issue.body.includes(query)))
-            .map(issue => issue.title);
+        let matchingIssues: string[] = [];
+        // if query has commas, or vertical bars, split into multiple terms
+        if (query.includes(',') || query.includes('|')) {
+            const terms = query.split(/[,|]+/).map(t => t.trim().toLowerCase()).filter(t => t.length > 0);
+            matchingIssues = response.data
+                .filter(issue => terms.some(term => issue.title.toLowerCase().includes(term) || (issue.body && issue.body.toLowerCase().includes(term))))
+                .map(issue => issue.title);
+        } else {
+            matchingIssues = response.data
+                .filter(issue => issue.title.toLowerCase().includes(query.toLowerCase()) || (issue.body && issue.body.toLowerCase().includes(query.toLowerCase())))
+                .map(issue => issue.title);
+        }
         return matchingIssues;
     } catch (error: any) {
         console.error('[findIssues] Error finding issues:', error.message || error);
