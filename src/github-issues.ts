@@ -18,10 +18,10 @@ const {data: { login }} = await octokit.rest.users.getAuthenticated();
 
 console.log(`Token corresponds to user @${login}`);
 
-export async function getIssues(repo: string, query: string): Promise<string[]> {
+export async function getIssues(repo: string, query: string, org?: string): Promise<string[]> {
     try {
         const response = await octokit.rest.issues.listForRepo({
-            owner: login,
+            owner: org ?? login,
             repo,
             state: 'open',
             per_page: 100,
@@ -52,10 +52,10 @@ export async function getIssues(repo: string, query: string): Promise<string[]> 
     }
 }
 
-export async function getRepoLabels(repo: string): Promise<string[]> {
+export async function getRepoLabels(repo: string, org?: string): Promise<string[]> {
     try {
         const labelResponse = await octokit.rest.issues.listLabelsForRepo({
-            owner: login,
+            owner: org ?? login,
             repo,
             per_page: 100,
             page: 1
@@ -72,10 +72,10 @@ export async function getRepoLabels(repo: string): Promise<string[]> {
     }
 }
 
-export async function createIssue(repo: string, title: string, body: string, labels?: string[]) {
+export async function createIssue(repo: string, title: string, body: string, labels?: string[], org?: string) {
     try {
         const issueResponse = await octokit.rest.issues.create({
-            owner: login,
+            owner: org ?? login,
             repo,
             title,
             body,

@@ -18,16 +18,25 @@ const {data: { login }} = await octokit.rest.users.getAuthenticated();
 
 console.log(`Token corresponds to user @${login}`);
 
-export async function getRepo(query: string): Promise<string[]> {
+export async function getRepo(query: string, org?: string): Promise<string[]> {
     try {
-        const response = await octokit.rest.repos.listForAuthenticatedUser({
-            visibility: 'public',
-            affiliation: 'owner',
-            sort: 'full_name',
-            direction: 'asc',
-            per_page: 100,
-            page: 1
-        });
+        const response = org
+            ? await octokit.rest.repos.listForOrg({
+                org,
+                type: 'all',
+                sort: 'full_name',
+                direction: 'asc',
+                per_page: 100,
+                page: 1
+            })
+            : await octokit.rest.repos.listForAuthenticatedUser({
+                visibility: 'all',
+                affiliation: 'owner',
+                sort: 'full_name',
+                direction: 'asc',
+                per_page: 100,
+                page: 1
+            });
 
         console.log('[findRepo] Repositories found:');
         response.data.forEach(repo => {
@@ -53,28 +62,39 @@ export async function getRepo(query: string): Promise<string[]> {
     }
 }
 
-export async function createRepo(name: string, description: string, isPrivate: boolean, teamName?: string, appId?: string) {
+export async function createRepo(name: string, description: string, isPrivate: boolean, org?: string, teamName?: string, appId?: string) {
     try {
-        // const repoResponse = await octokit.rest.repos.createForAuthenticatedUser({
-        //     name,
-        //     description,
-        //     private: isPrivate
-        // });
-        // console.log(`[createRepo] Repository created: "${repoResponse.data.full_name}" @ ${repoResponse.data.html_url}`);
+        const repoResponse = org
+            ? await octokit.rest.repos.createInOrg({
+                org,
+                name,
+                description,
+                private: isPrivate
+            })
+            : await octokit.rest.repos.createForAuthenticatedUser({
+                name,
+                description,
+                private: isPrivate
+            });
+        console.log(`[createRepo] Repository created: "${repoResponse.data.full_name}" @ ${repoResponse.data.html_url}`);
 
-        console.log('[createRepo] Setting custom properties for the repository...');
-        const resolvedTeamName = teamName && teamName.trim() !== '' ? teamName : 'unknown';
-        const resolvedAppId = appId && appId.trim() !== '' ? appId : 'unknown';
+        if (org) {
+            console.log('[createRepo] Setting custom properties for the repository...');
+            const resolvedTeamName = teamName && teamName.trim() !== '' ? teamName : 'unknown';
+            const resolvedAppId = appId && appId.trim() !== '' ? appId : 'unknown';
 
-        const propReponse = await octokit.rest.repos.createOrUpdateCustomPropertiesValues({
-            owner: login,
-            repo: name,
-            properties: [
-                { "property_name": "team_name", "value": resolvedTeamName },
-                { "property_name": "app_id", "value": resolvedAppId },
-            ]
-        });
-        // console.log(`[createRepo] Custom properties set for repository "${repoResponse.data.full_name}": team_name="${resolvedTeamName}", app_id="${resolvedAppId}"`);
+            await octokit.rest.repos.createOrUpdateCustomPropertiesValues({
+                owner: org,
+                repo: name,
+                properties: [
+                    { "property_name": "team_name", "value": resolvedTeamName },
+                    { "property_name": "app_id", "value": resolvedAppId },
+                ]
+            });
+            console.log(`[createRepo] Custom properties set: team_name="${resolvedTeamName}", app_id="${resolvedAppId}"`);
+        } else {
+            console.log('[createRepo] Skipping custom properties: not an organization repository.');
+        }
 
         // return repoResponse.data;
         return "ok";

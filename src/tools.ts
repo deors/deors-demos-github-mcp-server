@@ -9,12 +9,13 @@ export async function addTools(server: McpServer) {
         'findRepo',
         'Finds a GitHub repository.',
         {
-            query: z.string().describe('A query string to find matching repositories.')
+            query: z.string().describe('A query string to find matching repositories.'),
+            org: z.string().optional().describe('Optional GitHub organization name. If provided, searches the organization repos instead of the authenticated user repos.')
         },
-        async ({ query }) => {
-            console.log(`[findRepo] Received request with query "${query}"`);
+        async ({ query, org }) => {
+            console.log(`[findRepo] Received request with query "${query}"${org ? ` in org "${org}"` : ''}`);
             let message: string;
-            const foundRepos = await getRepo(query);
+            const foundRepos = await getRepo(query, org);
             if (foundRepos.length > 0) {
                 console.log(`[findRepo] Found ${foundRepos.length} repos matching "${query}":`, foundRepos);
                 const header = `| ## |                  Repository Name                 |\n|----|--------------------------------------------------|`;
@@ -44,16 +45,17 @@ export async function addTools(server: McpServer) {
             name: z.string().describe('The name of the repository to create.'),
             description: z.string().describe('A description of the repository.'),
             isPrivate: z.boolean().describe('Whether the repository should be private.'),
+            org: z.string().optional().describe('Optional GitHub organization name. If provided, creates the repository in the organization instead of the authenticated user account.'),
             teamName: z.string().optional().describe('Optional team name to attach to the repo. If not provided, "unknown" will be used but keep in mind that the repository might be flagged and removed at a later point by admins or cleaning bots.'),
             appId: z.string().optional().describe('Optional application id to attach to the repo. If not provided, "unknown" will be used but keep in mind that the repository might be flagged and removed at a later point by admins or cleaning bots.')
         },
-        async ({ name, description, isPrivate, teamName, appId }) => {
-            console.log(`[createRepo] Received request to create a repo with name "${name}", description "${description}" and private visibility ${isPrivate}`);
+        async ({ name, description, isPrivate, org, teamName, appId }) => {
+            console.log(`[createRepo] Received request to create a repo with name "${name}", description "${description}" and private visibility ${isPrivate}${org ? ` in org "${org}"` : ''}`);
             console.log(`[createRepo] The following values were used for custom properties: ` +
                 `teamName = "${teamName ? `'${teamName}'` : 'unknown'}", ` +
                 `appId = "${appId ? `'${appId}'` : 'unknown'}"`
             );
-            const creationResult = await createRepo(name, description, isPrivate, teamName, appId);
+            await createRepo(name, description, isPrivate, org, teamName, appId);
             const response: any = {
                 content: [
                     {
@@ -73,12 +75,13 @@ export async function addTools(server: McpServer) {
         'Finds GitHub issues based on a query string.',
         {
             repo: z.string().describe('The repository to search for issues.'),
-            query: z.string().describe('A query string to find matching issues.')
+            query: z.string().describe('A query string to find matching issues.'),
+            org: z.string().optional().describe('Optional GitHub organization name. If provided, searches issues in the organization repo instead of the authenticated user repo.')
         },
-        async ({ repo, query }) => {
-            console.log(`[findIssues] Received request for repo "${repo}" with query "${query}"`);
+        async ({ repo, query, org }) => {
+            console.log(`[findIssues] Received request for repo "${repo}" with query "${query}"${org ? ` in org "${org}"` : ''}`);
             let message: string;
-            const foundIssues = await getIssues(repo, query);
+            const foundIssues = await getIssues(repo, query, org);
             if (foundIssues.length > 0) {
                 console.log(`[findIssues] Found ${foundIssues.length} issues matching "${query}":`, foundIssues);
                 const header = `| ## |                   Issue Title                    |\n|----|--------------------------------------------------|`;
@@ -107,13 +110,14 @@ export async function addTools(server: McpServer) {
         {
             repo: z.string().describe('The repository to create the issue in.'),
             title: z.string().describe('The title of the issue.'),
-            body: z.string().describe('The body of the issue.')
+            body: z.string().describe('The body of the issue.'),
+            org: z.string().optional().describe('Optional GitHub organization name. If provided, creates the issue in the organization repo instead of the authenticated user repo.')
         },
-        async ({repo, title, body}, extra: RequestHandlerExtra<any, any>) => {
-            console.log(`[createIssue] Received request to create an issue in repo "${repo}" with title "${title}"`);
+        async ({repo, title, body, org}, extra: RequestHandlerExtra<any, any>) => {
+            console.log(`[createIssue] Received request to create an issue in repo "${repo}" with title "${title}"${org ? ` in org "${org}"` : ''}`);
             console.log('[createIssue] Listing available labels for this repo...');
-            
-            const availableLabels = await getRepoLabels(repo);
+
+            const availableLabels = await getRepoLabels(repo, org);
             
             console.log(`[createIssue] Available labels: ${availableLabels.join(', ')}`);
             
@@ -147,7 +151,7 @@ export async function addTools(server: McpServer) {
 
             const selectedLabels = elicitationResponse.content.selectedLabels === 'none' ? [] : elicitationResponse.content.selectedLabels.split(',').map((label: string) => label.trim());
 
-            const creationResult = await createIssue(repo, title, body, selectedLabels);
+            const creationResult = await createIssue(repo, title, body, selectedLabels, org);
             const response: any = {
                 content: [
                     {
