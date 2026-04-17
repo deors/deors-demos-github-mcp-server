@@ -44,7 +44,7 @@ export async function addTools(server: McpServer) {
         {
             name: z.string().describe('The name of the repository to create.'),
             description: z.string().describe('A description of the repository.'),
-            isPrivate: z.boolean().describe('Whether the repository should be private.'),
+            isPrivate: z.boolean().optional().default(true).describe('Whether the repository should be private. Defaults to true.'),
             org: z.string().optional().describe('Optional GitHub organization name. If provided, creates the repository in the organization instead of the authenticated user account.'),
             teamName: z.string().optional().describe('Optional team name to attach to the repo. If not provided, "unknown" will be used but keep in mind that the repository might be flagged and removed at a later point by admins or cleaning bots.'),
             appId: z.string().optional().describe('Optional application id to attach to the repo. If not provided, "unknown" will be used but keep in mind that the repository might be flagged and removed at a later point by admins or cleaning bots.')

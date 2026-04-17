@@ -62,7 +62,7 @@ export async function getRepo(query: string, org?: string): Promise<string[]> {
     }
 }
 
-export async function createRepo(name: string, description: string, isPrivate: boolean, org?: string, teamName?: string, appId?: string) {
+export async function createRepo(name: string, description: string, isPrivate: boolean = true, org?: string, teamName?: string, appId?: string) {
     try {
         const repoResponse = org
             ? await octokit.rest.repos.createInOrg({
